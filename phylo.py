@@ -5,15 +5,15 @@ from Bio import Phylo
 from math import *
 
 order = ["Yeast", "Metazoa", "Bilateria", "Chordata", "Vertebrata", "Clupeocephala", "Sarcopterygii", "Tetrapoda", "Amniota", "Mammalia"]
-yeast = []; metazoa = []; bilateria = []; chordata = []; vertebrata = []; clupeocephala = [] #teleosts
-sarcopterygii = []; tetrapoda = []; amniota = []; mammalia = []
+d = {"Yeast": [], "Metazoa": [], "Bilateria": [], "Chordata": [], "Vertebrata": [], "Clupeocephala": [], "Sarcopterygii": [], "Tetrapoda": [], "Amniota": [], "Mammalia": []}
 
-d = {"Yeast": yeast, "Metazoa": metazoa, "Bilateria": bilateria, "Chordata": chordata, "Vertebrata": vertebrata, "Clupeocephala": clupeocephala, "Sarcopterygii": sarcopterygii, "Tetrapoda": tetrapoda, "Amniota": amniota, "Mammalia": mammalia}
+list_genes = []
+with open("list_genes.txt") as infile:
+    for row in infile: 
+        list_genes.append(row.strip())
 
 
-list_genes = ["ENSG00000171862"]
-
-# list_genes = ["ENSG00000118260","ENSG00000198055","ENSG00000171862","ENSG00000118515","ENSG00000123159","ENSG00000063046","ENSG00000198873","ENSG00000104205","ENSG00000288602","ENSG00000106211","ENSG00000134308","ENSG00000137486","ENSG00000157500","ENSG00000173020","ENSG00000127955","ENSG00000114867","ENSG00000164742","ENSG00000139318","ENSG00000185345","ENSG00000079337","ENSG00000100077","ENSG00000087460","ENSG00000137841","ENSG00000158828"]
+# list_genes = ["ENSG00000171862"]
 
 t = Phylo.read("vertebrates_species-tree_Ensembl.nh", "newick")
 terminals = t.get_terminals()
@@ -22,79 +22,71 @@ terminals = t.get_terminals()
 for specie in terminals:
     path = str(t.get_path(specie))
     if "Mammalia" in path: 
-        mammalia.append(str(specie))
+        d["Mammalia"].append(str(specie))
     elif "Amniota" in path:
-        amniota.append(str(specie))        
+        d["Amniota"].append(str(specie))
     elif "Tetrapoda" in path:
-        tetrapoda.append(str(specie))
+        d["Tetrapoda"].append(str(specie))
     elif "Sarcopterygii" in path:
-        sarcopterygii.append(str(specie))
+        d["Sarcopterygii"].append(str(specie))
     elif "Clupeocephala" in path:
-        clupeocephala.append(str(specie))
+        d["Clupeocephala"].append(str(specie))
     elif "Vertebrata" in path: 
-        vertebrata.append(str(specie))
+        d["Vertebrata"].append(str(specie))
     elif "Chordata" in path:
-        chordata.append(str(specie))
+        d["Chordata"].append(str(specie))
     elif "Bilateria" in path: 
-        bilateria.append(str(specie))
+        d["Bilateria"].append(str(specie))
     elif "Metazoa" in path: 
-        metazoa.append(str(specie))
+        d["Metazoa"].append(str(specie))
     else: 
-        yeast.append(str(specie))
+        d["Yeast"].append(str(specie))
 
+print(d)
 
+trees = Phylo.parse("/home/fpicolo/Téléchargements/protein_trees.nhx", "newick")
+for tree in trees: # pour chaque arbre du fichier arbres
 
-# trees = Phylo.parse("/home/fpicolo/Téléchargements/protein_trees.nhx", "newick")
-# for tree in trees: # pour chaque arbre du fichier arbres
-tree = Phylo.read("ENSG00000171862.nh", "newick")
-terminals = tree.get_terminals()
-# print(terminals)
-if "Homo.sapiens" in str(terminals): # si on retrouve un gène humain dans l'arbre
-    path_human = list(tree.get_path({"comment": ".*Homo.sapiens.*"}))  
-    print(path_human)
-    try:
-        B1 = []; B2 = []; B3 = []; B4 = []; B5 = []; B6 = []; B7 = []; B8 = []; B9 = []; B10 = []
-        dico = {"Yeast": B1, "Metazoa": B2, "Bilateria": B3, "Chordata": B4, "Vertebrata": B5, "Clupeocephala": B6, "Sarcopterygii": B7, "Tetrapoda": B8, "Amniota": B9, "Mammalia": B10}
+# tree = Phylo.read("ENSG00000171862.nh", "newick")
+    terminals = tree.get_terminals()
+    if "Homo.sapiens" in str(terminals): # si on retrouve un gène humain dans l'arbre
+        all_human_id = list(tree.find_elements({"comment":".*Homo.sapiens.*"}))
+        for geneid in all_human_id:
+            if str(geneid) in list_genes:
+                dico = {"Yeast": [], "Metazoa": [], "Bilateria": [], "Chordata": [], "Vertebrata": [], "Clupeocephala": [], "Sarcopterygii": [], "Tetrapoda": [], "Amniota": [], "Mammalia": []}
+                for genecode in terminals: # pour toutes les espèces de l'arbre du gène de notre liste
+                    path = str(tree.get_path(genecode)).split("),") # on récupère les chemins de orthologue de notre gène
+                    specie = path[-1].split("=")[2][:-2].replace(".","_")
+                    if specie in str(d["Mammalia"]) or "Mammalia" in str(path):
+                        dico["Mammalia"].append(specie) # .append(genecode) pour récupérer l'id du gène de l'espèce
+                    elif specie in str(d["Amniota"]) or "Amniota" in str(path):
+                        dico["Amniota"].append(specie)
+                    elif specie in str(d["Tetrapoda"]) or "Tetrapoda" in str(path):
+                        dico["Tetrapoda"].append(specie)
+                    elif specie in str(d["Sarcopterygii"]) or "Sarcopterygii" in str(path):
+                        dico["Sarcopterygii"].append(specie)
+                    elif specie in str(d["Clupeocephala"]) or "Clupeocephala" in str(path):
+                        dico["Clupeocephala"].append(specie)
+                    elif specie in str(d["Vertebrata"]) or "Vertebrata" in str(path): 
+                        dico["Vertebrata"].append(specie)
+                    elif specie in str(d["Chordata"]) or "Chordata" in str(path):
+                        dico["Chordata"].append(specie)
+                    elif specie in str(d["Bilateria"]) or "Bilateria" in str(path): 
+                        dico["Bilateria"].append(specie)
+                    elif specie in str(d["Metazoa"]) or "Metazoa" in str(path): 
+                        dico["Metazoa"].append(specie)
+                    else: # le reste c'est "forcément" des levures
+                        dico["Yeast"].append(specie)
 
-        if str(path_human[-1]) in list_genes: # si l'id du gène humain se trouve dans notre liste 
-            for genecode in terminals: # pour toutes les espèces de l'arbre du gène de notre liste
-                path = str(tree.get_path(genecode)).split("),") # on récupère les chemins de orthologue de notre gène
-                specie = path[-1].split("=")[2][:-2].replace(".","_")
-                
-                if specie in str(mammalia) or "Mammalia" in str(path):
-                    B10.append(specie) #B10.append(str(gencode)) pour récupérer l'id du gène de l'espèce
-                elif specie in str(amniota) or "Amniota" in str(path):
-                    B9.append(specie)
-                elif specie in str(tetrapoda) or "Tetrapoda" in str(path):
-                    B8.append(specie)
-                elif specie in str(sarcopterygii) or "Sarcopterygii" in str(path):
-                    B7.append(specie)
-                elif specie in str(clupeocephala) or "Clupeocephala" in str(path):
-                    B6.append(specie)
-                elif specie in str(vertebrata) or "Vertebrata" in str(path): 
-                    B5.append(specie)
-                elif specie in str(chordata) or "Chordata" in str(path):
-                    B4.append(specie)
-                elif specie in str(bilateria) or "Bilateria" in str(path): 
-                    B3.append(specie)
-                elif specie in str(metazoa) or "Metazoa" in str(path): 
-                    B2.append(specie)
-                else: # le reste c'est "forcément" des levures
-                    B1.append(specie)
-            
-            for clade in order:
-                dico[clade] = list(set(dico[clade])) # on supprime les paralogues
-                if len(dico[clade]) >= ceil((80*len(d[clade]))/100) and len(dico[clade]) > 0: # si le gène est présent dans 
-                    print(clade)
-                    break # on s'arrête à ce clade
-            list_genes.remove(str(path_human[-1])) # on supprime le gène de notre liste
-            # break       
-    except IndexError: # contrer les arbres vides
-        # print(tree)
-        pass
+                for clade in order:
+                    dico[clade] = list(set(dico[clade])) # on supprime les paralogues
+                    if len(dico[clade]) >= ceil((80*len(d[clade]))/100) and len(dico[clade]) > 0: # si le gène est présent dans 
+                        print(str(geneid), clade)
+                        break # on s'arrête à ce clade
+
+                list_genes.remove(str(geneid)) # on supprime le gène de notre liste
+
 print(list_genes)
     
-
-
 
 
